@@ -1,0 +1,84 @@
+
+!transition_variables
+
+    "Log GDP" l_gdp, "Log GDP gap" l_gdp_gap, "Log GDP trend" l_gdp_tnd
+    "Log GDP trend, Q/Q" dl_gdp_tnd, "Annualized cumulative log GDP gap" cum_gap
+    "Log CPI Q/Q" dl_cpi, "Log CPI Y/Y" d4l_cpi, "Target" dl_cpi_targ, "Log CPI" l_cpi
+    "Short term rate" rs, "Real short term rate" rrs
+    "Real short term rate trend" rrs_tnd, "Real short term rate gap" rrs_gap
+    "Ex-post real short term rate" rrs_ex
+    
+    
+!parameters
+
+    A1, A2
+    B1, B2
+    C1, C2, C3
+    pi, rho, alpha
+
+
+!transition_shocks
+
+    eps_l_gdp_gap, eps_dl_cpi, eps_rs
+    eps_rrs_tnd, eps_dl_gdp_tnd, eps_dl_cpi_targ
+
+
+!transition_equations
+
+    % Decomposition of GDP into trend and gap
+    l_gdp = l_gdp_tnd + l_gdp_gap;
+
+    % GDP gap (aggregate demand)
+    l_gdp_gap = A1*l_gdp_gap{-1} - A2*rrs_gap + eps_l_gdp_gap;
+
+    % CPI inflation (Phillips curve)
+    dl_cpi = B1*dl_cpi{-1} + (1-B1)*dl_cpi{+1} + B2*l_gdp_gap + eps_dl_cpi;
+
+    % Monetary policy reaction function
+    rs = C1*rs{-1} + (1-C1)*( ...
+        rrs_tnd + dl_cpi_targ + C2*(d4l_cpi{+3} - dl_cpi_targ) + C3*l_gdp_gap ...
+    ) + eps_rs;
+
+    % Inflation target
+    dl_cpi_targ = dl_cpi_targ{-1} + eps_dl_cpi_targ !! dl_cpi_targ = pi;
+
+    % Definition of real rates
+    rrs = rs - dl_cpi{+1};
+
+    % Auxiliary definition real rate based on past inflation
+    rrs_ex = rs - dl_cpi;
+
+    % Four-quarter inflation
+    d4l_cpi = movavg(dl_cpi, -4);
+
+    % Decomposition of real rates into trend and gap
+    rrs = rrs_tnd + rrs_gap;
+
+    rrs_tnd = rrs_tnd{-1} + eps_rrs_tnd !! rrs_tnd = rho;
+
+    dl_gdp_tnd = 4*diff(l_gdp_tnd);
+
+    dl_gdp_tnd = dl_gdp_tnd{-1} + eps_dl_gdp_tnd !! dl_gdp_tnd = alpha;
+
+    cum_gap = cum_gap{-1} + l_gdp_gap/4 !! cum_gap = 0;
+    
+    l_cpi = l_cpi{-1} + dl_cpi/4;
+
+
+!measurement_variables
+
+    "Observed log GDP" obs_l_gdp
+    "Observed CPI Q/Q" obs_dl_cpi
+    %"Observed short term rate" obs_rs
+    "Observed ex-post real short term rate" obs_rrs_ex
+    "Observed target" obs_dl_cpi_targ
+
+
+!measurement_equations
+
+    obs_l_gdp = l_gdp;
+    obs_dl_cpi = dl_cpi;
+    %obs_rs = rs;
+    obs_rrs_ex = rrs_ex;
+    obs_dl_cpi_targ = dl_cpi_targ;
+
