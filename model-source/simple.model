@@ -11,9 +11,9 @@
 
 !parameters
 
-    A1, A2
-    B1, B2
-    C1, C2, C3
+    c0_l_gdp_gap, c1_l_gdp_gap
+    c0_dl_cpi, c1_dl_cpi
+    c0_rs, c1_rs, c2_rs
 
     ss_dl_cpi, ss_rrs, ss_dl_gdp
 
@@ -30,14 +30,18 @@
     l_gdp = l_gdp_tnd + l_gdp_gap;
 
     % GDP gap (aggregate demand)
-    l_gdp_gap = A1*l_gdp_gap{-1} - A2*rrs_gap + eps_l_gdp_gap;
+    l_gdp_gap = c0_l_gdp_gap*l_gdp_gap{-1} - c1_l_gdp_gap*rrs_gap + eps_l_gdp_gap;
 
     % CPI inflation (Phillips curve)
-    dl_cpi = B1*dl_cpi{-1} + (1-B1)*dl_cpi{+1} + B2*l_gdp_gap + eps_dl_cpi;
+    dl_cpi = 
+        + c0_dl_cpi*dl_cpi{-1} ...
+        + (1-c0_dl_cpi)*dl_cpi{+1} ...
+        + c1_dl_cpi*l_gdp_gap ...
+        + eps_dl_cpi;
 
     % Monetary policy reaction function
-    rs = C1*rs{-1} + (1-C1)*( ...
-        rrs_tnd + dl_cpi_targ + C2*(d4l_cpi{+3} - dl_cpi_targ) + C3*l_gdp_gap ...
+    rs = c0_rs*rs{-1} + (1-c0_rs)*( ...
+        rrs_tnd + dl_cpi_targ + c1_rs*(d4l_cpi{+3} - dl_cpi_targ) + c2_rs*l_gdp_gap ...
     ) + eps_rs;
 
     % Inflation target

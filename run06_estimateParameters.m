@@ -1,10 +1,11 @@
-%% Estimate parameters w/o and w/ system priors
+%% Estimate parameters w/o and w/ system priors 
 
 
 %% Clear workspace 
 
 clear
 close all
+%#ok<*CLARRSTR> 
 
 load mat/createModel.mat m
 load mat/readDataFromFred.mat h startHist endHist
@@ -24,13 +25,13 @@ histRange = startHist:endHist;
 
 estimSpecs = struct();
 
-estimSpecs.A1 = {0.4, 0.3, 0.9};
-estimSpecs.A2 = {0.15, 0.05, 0.20};
-estimSpecs.B1 = {0.4, 0.3, 0.9};
-estimSpecs.B2 = {0.10, 0.02, 0.20};
-estimSpecs.C1 = {0.7, 0.3, 0.95};
-estimSpecs.C2 = {3, 1.5, 5};
-estimSpecs.C3 = {0.5, 0, 1};
+estimSpecs.c0_l_gdp_gap = {0.6, 0.3, 0.9};
+estimSpecs.c1_l_gdp_gap = {0.15, 0.05, 0.20};
+estimSpecs.c0_dl_cpi = {0.4, 0.3, 0.9};
+estimSpecs.c1_dl_cpi = {0.10, 0.02, 0.20};
+estimSpecs.c0_rs = {0.7, 0.3, 0.95};
+estimSpecs.c1_rs = {3, 1.5, 5};
+estimSpecs.c2_rs = {0.5, 0, 1};
 
 estimSpecs.std_eps_l_gdp_gap = {1, 0.01, 10};
 estimSpecs.std_eps_dl_cpi = {1, 0.01, 10};
@@ -38,6 +39,9 @@ estimSpecs.std_eps_rs = {1, 0.01, 10};
 estimSpecs.std_eps_dl_gdp_tnd = {0.1, 0.001, 10};
 estimSpecs.std_eps_rrs_tnd = {0.1, 0.001, 10};
 
+for n = databank.fieldNames(estimSpecs)
+    estimSpecs.(n){4} = distribution.Normal.fromMeanStd(  m.(n), 0.2 );
+end
 
 %
 % Maximize posterior mode which in this case consists of the data
@@ -45,42 +49,17 @@ estimSpecs.std_eps_rrs_tnd = {0.1, 0.001, 10};
 % 
 
 filterOptions = {
-    'relative'; false
+    'relative'; false 
     'initUnit'; 'approxDiffuse' 
 };
 
 [summary1, pos1, ~, ~, mest1] = estimate( ...
-    m, h, histRange, estimSpecs, [], ...
-    'evaluateData', true, ...
-    'honorBounds', true, ...
-    'noSolution', 'penalty', ...
-    'filter', filterOptions, ...
-    'summary', 'table' ...
+    m, h, histRange, estimSpecs, [] ...
+    , 'noSolution', 'penalty' ...
+    , 'filter', filterOptions ...
 );
 
 summary1
-
-% Posterior simulator
-%{
-rng(0)
-N = 1000; 50000;
-[theta, logpost, ar, posFinal, scale, finalCov] = arwm( ...
-    pos1, N ...
-    , 'progress', true ...
-    , 'adaptScale', 0.75 ... 
-    , 'adaptProposalCov', 0.75 ... 
-    , 'gamma', 0.9 ...
-    , 'burnIn', 0.20 ...
-);
-%}
-
-
-[~, f1] = filter( ...
-    mest1, h, histRange, ...
-    'initUnit', 'approxDiffuse', ...
-    'meanOnly', true ...
-);
-
 
 %% Prepare system priors 
 
@@ -90,10 +69,12 @@ d = zerodb(m, 1:40);
 d.eps_dl_cpi_targ(1) = -1;
 d.cum_gap(0) = 0;
 p1 = simulate(m, d, 1:40, 'deviation', true, 'systemProperty', 'S');
+
 z.addSystemProperty(p1);
-z.addSystemPrior('-S(cum_gap, 20)', distribution.Normal.fromMeanStd(0.5, 0.01));
-z.addSystemPrior('S(cum_gap, 40)-S(cum_gap, 20)', distribution.Normal.fromMeanStd(0, 0.01));
-z.addSystemPrior('S(rs, 1)', distribution.Normal.fromMeanStd(0.25, 0.05));
+
+z.addSystemPrior('-S(cum_gap, 40)', distribution.Normal.fromMeanStd(0.6, 0.015));
+z.addSystemPrior('S(cum_gap, 40)-min(S(cum_gap, :))', distribution.Normal.fromMeanStd(0, 0.01));
+z.addSystemPrior('S(rs, 1)', distribution.Normal.fromMeanStd(0.25, 0.02));
 
 cutoff = 40;
 p2 = ffrf(m, 2*pi/cutoff, 'systemProperty', 'X');
@@ -112,31 +93,69 @@ z.seal();
 % likelihood and the system priors
 % 
 
-[summary2, pos2, ~, ~, mest2] = estimate( ...
-    m, h, histRange, estimSpecs, z, ...
-    'noSolution', 'penalty', 'filter', filterOptions, ...
-    'summary', 'table', 'evaluateData', true ...
+[summary2, pos2, p2, ~, mest2] = estimate( ...
+    m, h, histRange, estimSpecs, z ...
+    , 'noSolution', 'penalty' ...
+    , 'filter', filterOptions ...
+    , 'evalData', 1 ...
+    , 'evalIndiePriors', 1 ...
+    , 'evalSystemPriors', 1 ...
 );
 
 summary2
+s2 = summary2;
 
-[~, f1] = filter( ...
-    mest1, h, histRange, ...
-    'initUnit', 'approxDiffuse', ...
-    'meanOnly', true ...
+
+%% Run posterior simulator
+
+%{
+N = 5000;
+
+[theta, logpost, ar, posFinal, scale, finalCov] = arwm( ...
+    pos2, N ...
+    , 'Progress=', true ...
+    , 'AdaptScale=', 1/2 ...
+    , 'AdaptProposalCov=', 1/2 ...
+    , 'Gamma=', 0.51 ...
+    , 'BurnIn=', 0.20 ...
 );
+
+s = stats(pos2, theta, logpost);
+%}
+
+
+%% Posterior distribution of sacrifice ratio
+
+%{
+mm = alter(m, 5000);
+mm = assign(mm, s.chain);
+mm = solve(mm);
+
+d = zerodb(m, 1:40);
+d.eps_dl_cpi_targ(1) = -1;
+s = simulate(mm, d, 1:40, 'deviation', true);
+
+figure();
+histogram(s.cum_gap(40,:), normalization="pdf");
+d=distribution.Normal.fromMeanStd(0.6, 0.015);
+hold on
+x=0.56:0.001:0.66;
+plot(-x, pdf(d,x));
+%}
 
 
 %% Simulate disinflation 
 
+mm = [m, mest1, mest2];
+
 d = zerodb(mest1, 1:40);
 d.eps_dl_cpi_targ(1) = -1;
-s = simulate([mest1, mest2], d, 1:40, 'deviation', true, 'prependInput', true);
+s = simulate(mm, d, 1:40, 'deviation', true, 'prependInput', true);
 
 ch = databank.Chartpack();
 ch.Range = 0:40;
 ch.AxesExtras = {@(h) yline(h, 0, "lineWidth", 1)};
-ch.PlotSettings = {"marker", "s"};
+ch.PlotSettings = {"marker", "s"}; 
 ch.AxesSettings = {"yLimitMethod", "tight"};
 ch.ShowFormulas = true;
 
@@ -150,10 +169,16 @@ visual.hlegend("bottom", "Estimated model with no priors", "Estimated model with
 
 %% Filter GDP trend 
 
-[~, x] = filter([mest1, mest2], h, histRange, "meanOnly", true);
+[~, x] = filter(mm, h, histRange, "meanOnly", true, "initUnit", "approxDiffuse");
 
 figure();
-plot([x.l_gdp{:, 1}, x.l_gdp_tnd]);
+
+subplot(1, 2, 1);
+plot([x.l_gdp_tnd, x.l_gdp{:, 1}]);
+set(gca(), "xGrid", true, "yGrid", true, "yLimitMethod", "tight");
+
+subplot(1, 2, 2);
+plot([x.rrs_tnd, x.rrs_ex{:, 1}]);
 set(gca(), "xGrid", true, "yGrid", true, "yLimitMethod", "tight");
 
 visual.hlegend("bottom", "Data", "Estimated model with no priors", "Estimated model with system priors");

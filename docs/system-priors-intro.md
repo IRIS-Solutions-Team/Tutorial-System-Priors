@@ -1,18 +1,34 @@
-# Estimation/Calibration Using System Priors
+# Intro to estimation and calibration using system priors
 
-## Priors in Bayesian Estimation
-
-
-
-* Traditionally, priors on individual parameters
-
-* However, more often than not we simply wish to control the behavior of the model as a whole system, not so much the individual parameters…
+![[title-page]]
 
 
 ---
 
-##What Properties of the Model as a Whole? 
+## Priors in bayesian estimation
 
+* Traditionally, priors on individual parameters
+
+* However, more often than not we simply wish to control the behavior of
+  the model as a whole system...
+
+* ...not so much the individual parameters
+
+---
+
+## Non-bayesian interpretation of priors
+
+* Shrinkage (or penalty) function
+
+* Keep the parameters close to our “preferred” values
+
+* ”Close” is defined by the shape/curvature of the shrinkage/penalty function
+
+* Example: Normal priors are equivalent to quadratic shrinkage/penalty
+
+---
+
+## Examples of system priors
 
 
 * Model-implied correlation between output and inflation
@@ -28,7 +44,7 @@
 
 ---
 
-## How to Technically Introduce System Priors
+## Independent individual marginals
 
 
 
@@ -52,7 +68,31 @@ p_2\left(\theta_2 \mid m \right)
 p_n\left(\theta_n \mid m \right)
 $$
 
+Variance-bias trade-off
 
+---
+
+## Example: Normal independent individual marginals
+
+Equivalent to "ridge regression"
+
+<br/>
+
+$$
+\begin{gathered}
+\max\nolimits_{\{\theta\}} \ 
+\log p\left(Y \mid \theta, m\right)
++ \log p\left(\theta \mid m\right)
+\\[15pt]
+\equiv
+\max\nolimits_{\{\theta\}} \log p\left(Y \mid \theta, m\right)
+- \sum_{i=1}^n \left(\frac{\theta_i-\bar\theta_i}{\sigma} \right)^2
+\end{gathered}
+$$
+
+---
+
+## How to formalize system priors
 
 Complement (or replace) with density involving a property of the model as a whole, $h\left(\theta\right)$
 
@@ -70,35 +110,29 @@ q_k\bigl(h(\theta)\mid m\bigr)
 $$
 
 
-
 ---
 
 ## Benefits of System Priors in Estimation
 
-* A relatively low number of system priors can push parameter estimates into a region where the properties of the model as a whole make sense and are well-behaved…
+* A relatively low number of system priors can push parameter estimates
+  into a region where the properties of the model as a whole make sense and
+  are well-behaved…
 
 * …without enforcing a tighter prior structure on individual parameters
 
 
-
 ---
 
-## Non-Bayesian Interpretation of Priors
+## Priors in calibration: Maximize prior mode
 
-* Shrinkage (or penalty) function
+* Exclude/disregard data likelihood
 
-* Keep the parameters close to our “preferred” values
-
-* ”Close” is defined by the shape/curvature of the shrinkage/penalty function
-
-* Example: Normal priors are equivalent to quadratic shrinkage/penalty
+* Only maximize prior mode
 
 
----
-
-## Priors in Calibration: Maximize Prior Mode
-
-
+* Case 1: only independent priors on individual parameters
+<br/>
+$\Rightarrow$ modes of marginals
 
 $$
 p\left(\theta \mid m \right) =
@@ -108,9 +142,10 @@ p_n\left(\theta_n \mid m \right)
 \times \cdots
 $$
 
-...rivial: modes of marginals
 
-
+* Case 2: only a small number of system priors
+<br/>
+$\Rightarrow$ very likely underdetermined (singular)
 
 $$
 p\left(\theta \mid m \right) = 
@@ -119,10 +154,11 @@ q_1\bigl(h(\theta)\mid m\bigr)
 q_k\bigl(h(\theta)\mid m\bigr)
 $$
 
-...nontrivial and very likely significantly underdetermined
 
-
-
+* Case 3: Combination of priors on individual parameters and system priors
+<br/>
+$\Rightarrow$ deviate as little as possible from the "preferred" values of
+parameters while delivering sensible system properties
 $$
 p\left(\theta \mid m \right) =
 p_1\left(\theta_1 \mid m \right)
@@ -134,9 +170,32 @@ q_1\bigl(h(\theta)\mid m\bigr)
 q_k\bigl(h(\theta)\mid m\bigr)
 $$
 
-...system priors combined with light (not very tight) individual priors
 
+---
 
+## Implemenation in IrisT
 
+* Challenge: System priors are usually computationally intensive to evaluate
 
+* The following `@Model` class functions (methods) can be used to construct a
+`@SystemProperty` object for efficient evaluation of system properties
+
+| Function | Description |
+|---|---|
+| `simulate` | Any kind of simulation, including complex simulation design |   
+| `acf` | Autocovariance and autocorrelation functions |
+| `xsf` | Power spectrum and spectral density functions |
+| `ffrf` | Filter frequency response function |
+
+* The `@SystemProperty` objects are then collected in a `@SystemPriorWrapper`
+object, system prior densities are defined and the object is passed into
+the `estimate` function.
+
+---
+
+## Practical advice
+
+* Use lower/upper bounds
+
+* Always eyeball the shape of the log density 
 
