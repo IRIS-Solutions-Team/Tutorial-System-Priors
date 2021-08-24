@@ -8,7 +8,7 @@ estimating a simple gap model.
 
 * Matlab R2019b or newer
 
-* Iris Toolbox Releasee 20210802 or newer
+* Iris Toolbox Release 20210824 or newer
 
 
 ## Model source files
@@ -32,7 +32,7 @@ Read and run the Matlab scripts in the following order:
 * [`run01_createModel`](run01_createModel.m)
 * [`run02_simulateDisinflation`](run02_simulateDisinflation.m)
 * [`run03_readDataFromFred.m`](run03_readDataFromFred.m)
-* [`run04_experimentWithHP](run04_experimentWithHP.m)
+* [`run04_experimentWithHP`](run04_experimentWithHP.m)
 * [`run05_filterData`](run05_filterData.m)
-* [`run06_estimateParameters](run06_estimateParameters.m);
+* [`run06_estimateParameters`](run06_estimateParameters.m)
 
