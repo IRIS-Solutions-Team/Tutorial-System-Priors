@@ -39,9 +39,9 @@ estimSpecs.std_eps_rs = {1, 0.01, 10};
 estimSpecs.std_eps_dl_gdp_tnd = {0.1, 0.001, 10};
 estimSpecs.std_eps_rrs_tnd = {0.1, 0.001, 10};
 
-for n = databank.fieldNames(estimSpecs)
-    estimSpecs.(n){4} = distribution.Normal.fromMeanStd(  m.(n), 0.2 );
-end
+% for n = databank.fieldNames(estimSpecs)
+    % estimSpecs.(n){4} = distribution.Normal.fromMeanStd(  m.(n), 0.2 );
+% end
 
 %
 % Maximize posterior mode which in this case consists of the data
@@ -49,8 +49,7 @@ end
 % 
 
 filterOptions = {
-    'relative'; false 
-    'initUnit'; 'approxDiffuse' 
+    'relative'; ~false 
 };
 
 [summary1, pos1, ~, ~, mest1] = estimate( ...
@@ -169,7 +168,7 @@ visual.hlegend("bottom", "Estimated model with no priors", "Estimated model with
 
 %% Filter GDP trend 
 
-[~, x] = filter(mm, h, histRange, "meanOnly", true, "initUnit", "approxDiffuse");
+x = kalmanFilter(mm, h, histRange, "meanOnly", true);
 
 figure();
 

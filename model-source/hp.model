@@ -11,8 +11,9 @@
     diff(trend) = diff(trend{-1}) + shock_trend;
 
 !measurement-variables
-    x
+    x, dx
 
 !measurement-equations
     x = trend + gap;
+    dx = diff(trend) + diff(gap);
 

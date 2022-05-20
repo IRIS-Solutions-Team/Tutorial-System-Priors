@@ -55,6 +55,8 @@ p = simulate( ...
     , "systemProperty", "S" ...
 );
 
+
+%
 % Create a SystemPriorWrapper to do two things:
 %
 % 1. Collect all SystemProperty object on which you want to impose system
@@ -80,7 +82,6 @@ hold on
 x = 0 : 0.001 : 1;
 plot(x, -logPdf(d, x));
 plot(value(1), -logPdf(d, value(1)), "lineStyle", "none", "marker", "s", "lineWidth", 5);
-
-
+title("Log likelihood of system prior 'sacrifice ratio' within its prior distribution");
 
 

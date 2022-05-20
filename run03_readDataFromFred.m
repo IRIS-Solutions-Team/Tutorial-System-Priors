@@ -10,13 +10,13 @@ clear
 %% Read raw time series form FRED 
 
 list = [
-    "GDPC1->gdp"
-    "CPILEGSL->cpi"
-    "TB3MS->rs"
-    "GS10->r10y"
+    "GDPC1 -> gdp"
+    "CPILEGSL -> cpi"
+    "TB3MS -> rs"
+    "GS10 -> r10y"
 ];
 
-fred = databank.fromFred(list);
+fred = databank.fromFred.data(list);
 
 
 %% Convert all series to quarterly
@@ -27,7 +27,7 @@ fred = databank.fromFred(list);
 
 fred = databank.apply( ...
     fred ...
-    , @(x) convert(x, Frequency.Quarterly, "ignoreNaN=", false) ...
+    , @(x) convert(x, Frequency.Quarterly, "ignoreNaN", false) ...
 );
 
 
