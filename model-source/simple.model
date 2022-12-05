@@ -16,12 +16,16 @@
     c0_rs, c1_rs, c2_rs
 
     ss_dl_cpi, ss_rrs, ss_dl_gdp
+    sw
 
 
 !transition-shocks
 
     eps_l_gdp_gap, eps_dl_cpi, eps_rs
-    eps_rrs_tnd, eps_dl_gdp_tnd, eps_dl_cpi_targ
+    eps_rrs_tnd, 
+    eps_dl_gdp_tnd
+    eps_dl_gdp_tnd_temp
+    eps_dl_cpi_targ
 
 
 !transition-equations
@@ -41,7 +45,10 @@
 
     % Monetary policy reaction function
     rs = c0_rs*rs{-1} + (1-c0_rs)*( ...
-        rrs_tnd + dl_cpi_targ + c1_rs*(d4l_cpi{+3} - dl_cpi_targ) + c2_rs*l_gdp_gap ...
+        rrs_tnd + dl_cpi_targ ...
+        + (sw*c11_rs+(1-sw)*c12_rs)*(d4l_cpi{+3} - dl_cpi_targ) ...
+        + (sw*c21_rs+(1-sw)*c22_rs)*l_gdp_gap ...
+        + c3_rs*(dl_s - dl_s_targ) ...
     ) + eps_rs;
 
     % Inflation target
@@ -65,7 +72,10 @@
 
     dl_gdp_tnd = 4*diff(l_gdp_tnd);
 
-    dl_gdp_tnd = dl_gdp_tnd{-1} + eps_dl_gdp_tnd ...
+    dl_gdp_tnd = ...
+        + dl_gdp_tnd{-1} ...
+        + (1-sw) * eps_dl_gdp_tnd ...
+        + sw * eps_dl_gdp_tnd_temp ...
     !! dl_gdp_tnd = ss_dl_gdp;
 
     cum_gap = cum_gap{-1} + l_gdp_gap/4 ...
@@ -88,4 +98,12 @@
     obs_dl_cpi = dl_cpi;
     obs_rrs_ex = rrs_ex;
     obs_dl_cpi_targ = dl_cpi_targ;
+
+!links
+    
+    c_to_gdp := 0.40;
+
+
+
+
 

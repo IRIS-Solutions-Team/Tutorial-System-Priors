@@ -1,3 +1,4 @@
+
 %% Read US macro data from St Louis Fed FRED database 
 
 
@@ -10,13 +11,26 @@ clear
 %% Read raw time series form FRED 
 
 list = [
-    "GDPC1 -> gdp"
-    "CPILEGSL -> cpi"
-    "TB3MS -> rs"
-    "GS10 -> r10y"
+    "GDPC1"
+    "CPILEGSL"
+    "TB3MS"
+    "GS10"
 ];
 
-fred = databank.fromFred.data(list);
+raw = databank.fromFred.data(list);
+
+databank.toSheet(raw, "csv/raw-fred.csv");
+
+
+%% Rename series
+
+raw = databank.fromSheet("csv/raw-fred.csv");
+
+fred = struct();
+fred.gdp = raw.GDPC1;
+fred.cpi = raw.CPILEGSL;
+fred.rs = raw.TB3MS;
+fred.r10y = raw.GS10;
 
 
 %% Convert all series to quarterly
@@ -38,6 +52,7 @@ fred = databank.apply( ...
 
 startHist = qq(1995,1);
 endHist = qq(2021,1);
+lastObs = getEnd(fred.gdp);
 
 
 %% Create databank of observables 
@@ -50,14 +65,14 @@ h = struct( );
 h.obs_l_gdp = 100*log(fred.gdp);
 h.obs_dl_cpi = 400*diff(log(fred.cpi));
 h.obs_rs = fred.rs;
-h.obs_dl_cpi_targ = Series(startHist:endHist, 2.25);
+h.obs_dl_cpi_targ = Series(startHist:lastObs, 2.25);
 h.obs_rrs_ex = h.obs_rs - h.obs_dl_cpi;
 h.obs_rrs_ex = h.obs_rs{-1} - h.obs_dl_cpi;
 
 
 %% Save databank and dates to mat and CSV files 
 
-save mat/readDataFromFred.mat h startHist endHist 
+save mat/readDataFromFred.mat h startHist endHist lastObs
 databank.toCSV(h, "fred.csv");
 
 

@@ -39,6 +39,8 @@ m.std_eps_dl_gdp_tnd = 0.1;
 m.std_eps_rrs_tnd = 0.2;
 m.std_eps_dl_cpi_targ = 0.01;
 
+m.sw = 0;
+m.std_eps_dl_gdp_tnd_temp = 0;
 
 %% Calculate steady state and first-order solution 
 

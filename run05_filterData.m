@@ -5,34 +5,64 @@
 
 clear
 close all
-iris.required(20210802)
 
 load mat/createModel.mat m
-load mat/readDataFromFred.mat h startHist endHist
-histRange = startHist : endHist;
+load mat/readDataFromFred.mat h startHist endHist lastObs
+histRange = startHist : lastObs;
 
 
 %% Model based Kalman filter 
 
-f = kalmanFilter( ...
+f0 = kalmanFilter( ...
     m, h, histRange ...
     , "unitRootInitial", "approxDiffuse" ...
     , "meanOnly", true ...
 );
 
+m1 = m;
+m1.sw = 1;
+m1 = solve(m1);
+over = struct();
+over.std_eps_dl_gdp_tnd_temp = Series(qq(2019,4):qq(2021,3), 5);
 
+f1 = kalmanFilter( ...
+    m1, h, histRange ...
+    , "unitRootInitial", "approxDiffuse" ...
+    , "meanOnly", true ...
+    , "override", over ...
+);
+
+m2 = m;
+m2.std_eps_dl_gdp_tnd_temp = 5;
+m2 = solve(m2);
+over = struct();
+over.sw = Series(qq(2019,4):qq(2021,3), 1);
+
+f2 = kalmanFilter( ...
+    m2, h, histRange ...
+    , "unitRootInitial", "approxDiffuse" ...
+    , "meanOnly", true ...
+    , "override", over ...
+);
+chartDb = databank.merge("horzcat", f0, f1, f2);
+
+chartDb.dl_gdp_tnd
 
 %% Plot GDP trend estimate 
 
 figure();
 
-subplot(2, 2, 1);
-plot(histRange, [f.l_gdp, f.l_gdp_tnd]);
+% subplot(2, 2, 1);
+plot(histRange, [f0.l_gdp, chartDb.l_gdp_tnd]);
 title("Trend component estimate in l_gdp", "interpreter", "none");
 
+return
+
 subplot(2, 2, 2);
-plot(histRange, [f.rrs_tnd, f.obs_rrs_ex]);
+plot(histRange, [f0.rrs_tnd, chartDb.obs_rrs_ex]);
 title("Trend component estimate in rrs");
+
+return
 
 
 %% Plot filter frequency response function 
