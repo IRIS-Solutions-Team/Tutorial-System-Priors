@@ -46,9 +46,8 @@
     % Monetary policy reaction function
     rs = c0_rs*rs{-1} + (1-c0_rs)*( ...
         rrs_tnd + dl_cpi_targ ...
-        + (sw*c11_rs+(1-sw)*c12_rs)*(d4l_cpi{+3} - dl_cpi_targ) ...
-        + (sw*c21_rs+(1-sw)*c22_rs)*l_gdp_gap ...
-        + c3_rs*(dl_s - dl_s_targ) ...
+        + c1_rs*(d4l_cpi{+3} - dl_cpi_targ) ...
+        + c2_rs*l_gdp_gap ...
     ) + eps_rs;
 
     % Inflation target
@@ -98,12 +97,4 @@
     obs_dl_cpi = dl_cpi;
     obs_rrs_ex = rrs_ex;
     obs_dl_cpi_targ = dl_cpi_targ;
-
-!links
-    
-    c_to_gdp := 0.40;
-
-
-
-
 
