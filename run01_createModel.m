@@ -16,7 +16,6 @@ end
 
 m = Model.fromFile( ...
     "model-source/simple.model" ...
-    , "linear", true ...
     , "growth", true ...
 );
 
@@ -31,6 +30,8 @@ m.c0_l_gdp_gap = 0.7;
 m.c1_l_gdp_gap = 0.1;
 m.c0_dl_cpi = 0.6;
 m.c1_dl_cpi = 0.1;
+m.c1_dl_cpi_targ = 1;
+m.c1_dl_gdp_tnd = 1;
 m.c0_rs = 0.7;
 m.c1_rs = 3;
 m.c2_rs = 0.5;
@@ -44,11 +45,8 @@ m.std_eps_dl_gdp_tnd_temp = 0;
 
 %% Calculate steady state and first-order solution 
 
-m = set(m, "linear", false);
 m = steady(m);
 checkSteady(m);
-m = set(m, "linear", true);
-
 m = solve(m);
 
 

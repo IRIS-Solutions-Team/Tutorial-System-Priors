@@ -10,6 +10,11 @@ load mat/createModel.mat m
 load mat/readDataFromFred.mat h startHist endHist lastObs
 histRange = startHist : lastObs;
 
+m.c1_dl_cpi_targ = 0;
+m.c1_dl_gdp_tnd = 0.95;
+m = steady(m);
+checkSteady(m);
+m = solve(m);
 
 %% Model based Kalman filter 
 
